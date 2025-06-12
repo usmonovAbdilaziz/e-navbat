@@ -1,0 +1,22 @@
+{
+  "name": "e-navbat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/main.js",
+    "owner": "node src/db/create.owner.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "joi": "^17.13.3",
+    "mongoose": "^8.15.1",
+    "nodemon": "^3.1.10"
+  }
+}
