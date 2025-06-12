@@ -60,7 +60,7 @@ class AdminController {
       if (value.password) {
         hashedPassword = await crypto.encrypt(value.password);
       }
-      console.log("01703489704279109");
+
       const updatedAdmin = await Admin.findByIdAndUpdate(
         id,
         { ...value, password: hashedPassword },
