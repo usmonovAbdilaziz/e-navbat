@@ -10,6 +10,7 @@ const PORT = process.env.PORT;
 const app = express();
 app.use(express.json());
 await connectDB();
+
 app.use("/admin", adminRouter);
 app.use("/passport", passportRouter);
 app.use("/transport", transportRouter);
