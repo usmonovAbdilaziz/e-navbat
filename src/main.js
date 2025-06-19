@@ -6,9 +6,12 @@ import ticketRouter from "./routes/ticket.routes.js";
 import customerRouter from "./routes/customer.routes.js";
 import express from "express";
 import config from "./config/app.js";
+import cookieParser from "cookie-parser";
+
 const PORT = config.PORT;
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 await connectDB();
 
 app.use("/admin", adminRouter);

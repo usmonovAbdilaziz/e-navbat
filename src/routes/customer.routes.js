@@ -5,6 +5,9 @@ const controller = customerController;
 
 const router = Router();
 
-router.post("/signup", controller.signUp);
+router
+  .post("/signup", controller.signUp)
+  .post("/signin", controller.signIn)
+  .post("/confirm-signin", controller.confirmSignin);
 
 export default router;

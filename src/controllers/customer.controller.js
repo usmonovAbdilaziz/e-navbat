@@ -1,14 +1,23 @@
 import Customer from "../models/customer.model.js";
-import { creatCustomerValidator } from "../validation/customer-validator.js";
+import {
+  confirmSignInCustomerValidator,
+  signInCustomerValidator,
+  signUpCustomerValidator,
+} from "../validation/customer-validator.js";
 import { handleError } from "../helpers/error.js";
 import { successMessage } from "../helpers/succes.js";
-import jwt from "jsonwebtoken";
+import { Token } from "../utils/token-servise.js";
+import { generetOTP } from "../helpers/genereate-otp.js";
+import NodeCache from "node-cache";
 import config from "../config/app.js";
+import { transporter } from "../helpers/send-mail.js";
 
+const token = new Token();
+const cache = new NodeCache();
 class CustomerController {
   async signUp(req, res) {
     try {
-      const { value, error } = creatCustomerValidator(req.body);
+      const { value, error } = signUpCustomerValidator(req.body);
       if (error) {
         return handleError(res, error, 422);
       }
@@ -24,14 +33,97 @@ class CustomerController {
       }
       const newCustomer = await Customer.create(value);
       const payload = { id: newCustomer._id };
-      const token = jwt.sign(payload, config.JWT_TOKEN_REFRESH_KEY, {
-        expiresIn: config.JWT_TOKEN_REFRESH_TIME,
+      const accesToken = await token.generateAccesToken(payload);
+      const refreshToken = await token.generateRefreshToken(payload);
+      console.log("2y045607946760743609");
+      res.cookie("refreshTokenCustomer", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       });
       return successMessage(
         res,
         {
           data: newCustomer,
-          token,
+          token: accesToken,
+        },
+        201
+      );
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async signIn(req, res) {
+    try {
+      const { value, error } = signInCustomerValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+
+      const email = value.email;
+      const existsEmail = await Customer.findOne({ email });
+      if (!existsEmail) {
+        return handleError(res, "Customer not found", 404);
+      }
+      const otp = generetOTP();
+      const mailOptions = {
+        from: config.MAIL_USER,
+        to: email,
+        subject: "e-navbat",
+        text: otp,
+      };
+      const sendMailPromise = () =>
+        new Promise((res, rej) => {
+          transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+              rej(error);
+            } else {
+              res(info);
+            }
+          });
+        });
+      try {
+        const info = await sendMailPromise();
+        console.log(info);
+      } catch (error) {
+        console.log(error);
+        return handleError(res, "Error sending email", 400);
+      }
+      cache.set(email, otp, 120);
+      return successMessage(res, "Email sent successfully");
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+
+  async confirmSignin(req, res) {
+    try {
+      const { value, error } = confirmSignInCustomerValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+      const cacheOTP = cache.get(value.email);
+      if (!cacheOTP || cacheOTP != value.otp) {
+        return handleError(res, "OTP expired", 400);
+      }
+      const email = value.email;
+      const newCustomer = await Customer.findOne({ email });
+      if (!newCustomer) {
+        return handleError(res, "Costumer not found");
+      }
+      const payload = { id: newCustomer._id };
+      const accesToken = await token.generateAccesToken(payload);
+      const refreshToken = await token.generateRefreshToken(payload);
+      res.cookie("refreshTokenCustomer", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      return successMessage(
+        res,
+        {
+          data: newCustomer,
+          token: accesToken,
         },
         201
       );
