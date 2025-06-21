@@ -52,13 +52,11 @@ class CustomerController {
       if (error) {
         return handleError(res, error, 422);
       }
-
       const email = value.email;
       const existsEmail = await Customer.findOne({ email });
       if (!existsEmail) {
         return handleError(res, "Customer not found", 404);
       }
-
       const otp = generetOTP();
       const mailOptions = {
         from: config.MAIL_USER,
@@ -66,8 +64,7 @@ class CustomerController {
         subject: "e-navbat",
         text: otp,
       };
-
-      transporter.sendMail(mailOptions, (error, info) => {
+      await transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
           console.error("Email yuborishda xatolik:", error);
           return handleError(res, "Error sending email", 400);
@@ -87,16 +84,15 @@ class CustomerController {
       if (error) {
         return handleError(res, error, 422);
       }
-      const cacheOTP = cache.get(value.email);
+      const email = value.email;
+      const cacheOTP = cache.get(email);
       if (!cacheOTP || cacheOTP != value.otp) {
         return handleError(res, "OTP expired", 400);
       }
-      const email = value.email;
       const newCustomer = await Customer.findOne({ email });
       if (!newCustomer) {
         return handleError(res, "Costumer not found");
       }
-
       const payload = { id: newCustomer._id };
       const accesToken = await token.generateAccesToken(payload);
       const refreshToken = await token.generateRefreshToken(payload);
@@ -120,24 +116,46 @@ class CustomerController {
   async newAccesToken(req, res) {
     try {
       const refreshToken = req.cookies?.refreshTokenCustomer;
-
       if (!refreshToken) {
-        return handleError(res, "Customer not found", 400);
+        return handleError(res, "Refresh token expired", 400);
       }
       const decodedToken = await token.verifyToken(
         refreshToken,
         config.TOKEN_REFRESH_KEY
       );
       if (!decodedToken) {
-        return handleError(res, "Token not found", 401);
+        return handleError(res, "Invalid token", 400);
       }
-      const customer = Customer.findById(decodedToken.id);
+      const customer = await Customer.findById(decodedToken.id);
       if (!customer) {
-        return handleError(res, "Customer not found", 404);
+        return handleError(res, "Customer topilmadi", 404);
       }
       const payload = { id: customer._id };
-      const accesToken = generateAccesToken(payload);
-      return successMessage(res, { token: accesToken });
+      const accessToken = token.generateAccesToken(payload);
+      return successMessage(res, { token: accessToken });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async logOut(req, res) {
+    try {
+      const refreshToken = req.cookies?.refreshTokenCustomer;
+      if (!refreshToken) {
+        return handleError(res, "Refresh token epxired", 400);
+      }
+      const decodedToken = await token.verifyToken(
+        refreshToken,
+        config.TOKEN_REFRESH_KEY
+      );
+      if (!decodedToken) {
+        return handleError(res, "Invalid token", 400);
+      }
+      const patient = await Patient.findById(decodedToken.id);
+      if (!patient) {
+        return handleError(res, "Patient not found", 404);
+      }
+      res.clearCookie("refreshTokenCustomer");
+      return successRes(res, {});
     } catch (error) {
       return handleError(res, error);
     }

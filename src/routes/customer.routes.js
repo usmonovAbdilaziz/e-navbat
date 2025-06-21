@@ -9,6 +9,7 @@ router
   .post("/signup", controller.signUp)
   .post("/signin", controller.signIn)
   .post("/confirm-signin", controller.confirmSignin)
-  .post("/token", controller.newAccesToken);
+  .post("/token", controller.newAccesToken)
+  .post("/log-out", controller.logOut);
 
 export default router;

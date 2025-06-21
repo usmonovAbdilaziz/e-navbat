@@ -12,5 +12,5 @@ export default {
   MAIL_HOST: process.env.MAIL_HOST,
   MAIL_PORT: process.env.MAIL_PORT,
   MAIL_USER: process.env.MAIL_USER,
-  MAIL_PASWORD: process.env.OWNER_PASSWORD,
+  MAIL_PASWORD: process.env.MAIL_PASWORD,
 };

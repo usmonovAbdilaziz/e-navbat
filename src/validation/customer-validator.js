@@ -6,7 +6,7 @@ export const signUpCustomerValidator = (data) => {
       .regex(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
       .required(),
     phoneNumber: Joi.string()
-      .regex(/^\+998\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/)
+      .regex(/^\+998\d{2}\d{3}\d{2}\d{2}$/)
       .required(),
   });
   return customer.validate(data);
@@ -35,7 +35,7 @@ export const updateCustomerValidator = (data) => {
       .regex(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
       .optional(),
     phoneNumber: Joi.string()
-      .regex(/^\+998\s\d{2}\s\d{3}\s\d{2}\s\d{2}$/)
+      .regex(/^\+998\d{2}\d{3}\d{2}\d{2}$/)
       .optional(),
   });
   return customer.validate(data);
