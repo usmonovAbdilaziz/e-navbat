@@ -8,16 +8,11 @@ export class Token {
   }
   async generateRefreshToken(payload) {
     return jwt.sign(payload, config.TOKEN_REFRESH_KEY, {
-      expiresIn: config.TOKEN_REFRESH_KEY,
+      expiresIn: config.TOKEN_REFRESH_TIME,
     });
   }
 
   async verifyToken(token, secretKey) {
-    try {
-      return jwt.verify(token, secretKey);
-    } catch (err) {
-      console.error("Token not valid:", err.message);
-      return null;
-    }
+    return jwt.verify(token, secretKey);
   }
 }

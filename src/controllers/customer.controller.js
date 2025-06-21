@@ -10,7 +10,7 @@ import { Token } from "../utils/token-servise.js";
 import { generetOTP } from "../helpers/genereate-otp.js";
 import NodeCache from "node-cache";
 import config from "../config/app.js";
-import { transporter } from "../helpers/send-mail.js";
+import { sendMailPromise } from "../helpers/send-mail.js";
 
 const token = new Token();
 const cache = new NodeCache();
@@ -49,14 +49,10 @@ class CustomerController {
   async signIn(req, res) {
     try {
       const { value, error } = signInCustomerValidator(req.body);
-      if (error) {
-        return handleError(res, error, 422);
-      }
+      if (error) return handleError(res, error, 422);
       const email = value.email;
       const existsEmail = await Customer.findOne({ email });
-      if (!existsEmail) {
-        return handleError(res, "Customer not found", 404);
-      }
+      if (!existsEmail) return handleError(res, "Customer not found", 404);
       const otp = generetOTP();
       const mailOptions = {
         from: config.MAIL_USER,
@@ -64,20 +60,15 @@ class CustomerController {
         subject: "e-navbat",
         text: otp,
       };
-      await transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error("Email yuborishda xatolik:", error);
-          return handleError(res, "Error sending email", 400);
-        }
-
-        console.log("Email yuborildi:", info.response);
-        cache.set(email, otp, 120);
-        return successMessage(res, `Email sent successfully. OTP: ${otp}`);
-      });
+      await sendMailPromise(mailOptions);
+      cache.set(email, otp, 120);
+      return successMessage(res, `Email sent successfully. OTP: ${otp}`);
     } catch (error) {
-      return handleError(res, error);
+      console.error("Email yuborishda xatolik:", error);
+      return handleError(res, "Error sended on email", 400);
     }
   }
+
   async confirmSignin(req, res) {
     try {
       const { value, error } = confirmSignInCustomerValidator(req.body);
@@ -119,6 +110,8 @@ class CustomerController {
       if (!refreshToken) {
         return handleError(res, "Refresh token expired", 400);
       }
+
+      console.log("dsq4587382034-30w3rt3w");
       const decodedToken = await token.verifyToken(
         refreshToken,
         config.TOKEN_REFRESH_KEY
@@ -131,7 +124,9 @@ class CustomerController {
         return handleError(res, "Customer topilmadi", 404);
       }
       const payload = { id: customer._id };
-      const accessToken = token.generateAccesToken(payload);
+      const accessToken = await token.generateAccesToken(payload);
+      console.log(accessToken);
+
       return successMessage(res, { token: accessToken });
     } catch (error) {
       return handleError(res, error);
@@ -150,9 +145,9 @@ class CustomerController {
       if (!decodedToken) {
         return handleError(res, "Invalid token", 400);
       }
-      const patient = await Patient.findById(decodedToken.id);
-      if (!patient) {
-        return handleError(res, "Patient not found", 404);
+      const customer = await Customer.findById(decodedToken.id);
+      if (!customer) {
+        return handleError(res, "Customer not found", 404);
       }
       res.clearCookie("refreshTokenCustomer");
       return successRes(res, {});
