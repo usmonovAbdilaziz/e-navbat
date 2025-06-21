@@ -150,7 +150,7 @@ class CustomerController {
         return handleError(res, "Customer not found", 404);
       }
       res.clearCookie("refreshTokenCustomer");
-      return successRes(res, {});
+      return successMessage(res, {});
     } catch (error) {
       return handleError(res, error);
     }
