@@ -2,6 +2,7 @@ import { Schema, Types, model } from "mongoose";
 
 const ticketSchema = new Schema(
   {
+    phoneNumber: { type: String, required: true },
     transportId: { type: Types.ObjectId, ref: "Transport", required: true },
     from: { type: String, required: true },
     to: { type: String, required: true },

@@ -8,6 +8,7 @@ const router = Router();
 router
   .post("/signup", controller.signUp)
   .post("/signin", controller.signIn)
-  .post("/confirm-signin", controller.confirmSignin);
+  .post("/confirm-signin", controller.confirmSignin)
+  .post("/token", controller.newAccesToken);
 
 export default router;

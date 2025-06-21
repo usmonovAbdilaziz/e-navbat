@@ -1,12 +1,21 @@
 import { handleError } from "../helpers/error.js";
 import { successMessage } from "../helpers/succes.js";
 import {
+  confirmSignInTicketValidator,
   createTicketValidator,
+  signInTicketValidator,
   updateTicketValidator,
 } from "../validation/ticket.validator.js";
 import Transport from "../models/transport.model.js";
 import Ticket from "../models/ticket.model.js";
 import { isValidObjectId } from "mongoose";
+import { generetOTP } from "../helpers/genereate-otp.js";
+import NodeCache from "node-cache";
+import { send_sms } from "../helpers/send-sms.js";
+import { Token } from "../utils/token-servise.js";
+
+const cache = new NodeCache();
+const token = new Token();
 
 class TicketController {
   async createTicket(req, res) {
@@ -14,7 +23,6 @@ class TicketController {
       const ticketCount = await Ticket.countDocuments({
         transportId: req.body.transportId,
       });
-
       const transport = await Transport.findById(req.body.transportId);
       if (!transport) {
         return handleError(res, "Transport topilmadi", 404);
@@ -22,7 +30,6 @@ class TicketController {
       if (transport.seat <= ticketCount) {
         return handleError(res, "Transportda joylar to‘lib bo‘lgan", 400);
       }
-
       const { value, error } = createTicketValidator(req.body);
       if (error) {
         return handleError(res, error, 422);
@@ -36,6 +43,61 @@ class TicketController {
       }
       const newTicket = await Ticket.create(value);
       return successMessage(res, newTicket, 201);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async signinTicket(req, res) {
+    try {
+      const { value, error } = signInTicketValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+      const { phoneNumber } = value;
+      const ticket = Ticket.findOne({ phoneNumber });
+      if (!ticket) {
+        return handleError(res, "Ticket not found", 404);
+      }
+      const otp = generetOTP(6);
+      cache.set(phoneNumber, otp, 120);
+      await send_sms(phoneNumber.split("+")[1], otp);
+      return successMessage(res, "Sended message");
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async confirmSigninTicket(req, res) {
+    try {
+      const { value, error } = confirmSignInTicketValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+      const cacheOTP = cache.get(value.phoneNumber);
+      if (!cacheOTP || cacheOTP != value.otp) {
+        return handleError(res, "OTP expired", 400);
+      }
+      const phoneNumber = value.phoneNumber;
+      const ticket = await Customer.findOne({ phoneNumber });
+      if (!ticket) {
+        return handleError(res, "Costumer not found");
+      }
+      cache.del(phoneNumber);
+      const payload = { id: ticket._id };
+      const accesToken = await token.generateAccesToken(payload);
+      const refreshToken = await token.generateRefreshToken(payload);
+      res.cookie("refreshTokenTicket", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      return successMessage(
+        res,
+        {
+          data: ticket,
+          token: accesToken,
+        },
+        200
+      );
     } catch (error) {
       return handleError(res, error);
     }

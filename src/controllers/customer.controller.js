@@ -25,17 +25,10 @@ class CustomerController {
       if (existsEmail) {
         return handleError(res, "Eamil already exsist", 409);
       }
-      const exsistPhone = await Customer.findOne({
-        phoneNumber: value.phoneNumber,
-      });
-      if (exsistPhone) {
-        return handleError(res, "Phone already exists ", 409);
-      }
       const newCustomer = await Customer.create(value);
       const payload = { id: newCustomer._id };
       const accesToken = await token.generateAccesToken(payload);
       const refreshToken = await token.generateRefreshToken(payload);
-      console.log("2y045607946760743609");
       res.cookie("refreshTokenCustomer", refreshToken, {
         httpOnly: true,
         secure: true,
@@ -65,6 +58,7 @@ class CustomerController {
       if (!existsEmail) {
         return handleError(res, "Customer not found", 404);
       }
+
       const otp = generetOTP();
       const mailOptions = {
         from: config.MAIL_USER,
@@ -72,30 +66,21 @@ class CustomerController {
         subject: "e-navbat",
         text: otp,
       };
-      const sendMailPromise = () =>
-        new Promise((res, rej) => {
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              rej(error);
-            } else {
-              res(info);
-            }
-          });
-        });
-      try {
-        const info = await sendMailPromise();
-        console.log(info);
-      } catch (error) {
-        console.log(error);
-        return handleError(res, "Error sending email", 400);
-      }
-      cache.set(email, otp, 120);
-      return successMessage(res, "Email sent successfully");
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("Email yuborishda xatolik:", error);
+          return handleError(res, "Error sending email", 400);
+        }
+
+        console.log("Email yuborildi:", info.response);
+        cache.set(email, otp, 120);
+        return successMessage(res, `Email sent successfully. OTP: ${otp}`);
+      });
     } catch (error) {
       return handleError(res, error);
     }
   }
-
   async confirmSignin(req, res) {
     try {
       const { value, error } = confirmSignInCustomerValidator(req.body);
@@ -111,6 +96,7 @@ class CustomerController {
       if (!newCustomer) {
         return handleError(res, "Costumer not found");
       }
+
       const payload = { id: newCustomer._id };
       const accesToken = await token.generateAccesToken(payload);
       const refreshToken = await token.generateRefreshToken(payload);
@@ -125,8 +111,33 @@ class CustomerController {
           data: newCustomer,
           token: accesToken,
         },
-        201
+        200
       );
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async newAccesToken(req, res) {
+    try {
+      const refreshToken = req.cookies?.refreshTokenCustomer;
+
+      if (!refreshToken) {
+        return handleError(res, "Customer not found", 400);
+      }
+      const decodedToken = await token.verifyToken(
+        refreshToken,
+        config.TOKEN_REFRESH_KEY
+      );
+      if (!decodedToken) {
+        return handleError(res, "Token not found", 401);
+      }
+      const customer = Customer.findById(decodedToken.id);
+      if (!customer) {
+        return handleError(res, "Customer not found", 404);
+      }
+      const payload = { id: customer._id };
+      const accesToken = generateAccesToken(payload);
+      return successMessage(res, { token: accesToken });
     } catch (error) {
       return handleError(res, error);
     }

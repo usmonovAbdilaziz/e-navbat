@@ -2,6 +2,9 @@ import Joi from "joi";
 
 export const createTicketValidator = (data) => {
   const ticket = Joi.object({
+    phoneNumber: Joi.string()
+      .regex(/^\+998\d{2}\d{3}\d{2}\d{2}$/)
+      .required(),
     transportId: Joi.string().required(),
     from: Joi.string().required(),
     to: Joi.string().required(),
@@ -9,6 +12,23 @@ export const createTicketValidator = (data) => {
     departure: Joi.string().required(),
     arrival: Joi.string().required(),
     customerId: Joi.string().required(),
+  });
+  return ticket.validate(data);
+};
+export const signInTicketValidator = (data) => {
+  const ticket = Joi.object({
+    phoneNumber: Joi.string()
+      .regex(/^\+998\d{2}\d{3}\d{2}\d{2}$/)
+      .required(),
+  });
+  return ticket.validate(data);
+};
+export const confirmSignInTicketValidator = (data) => {
+  const ticket = Joi.object({
+    phoneNumber: Joi.string()
+      .regex(/^\+998\d{2}\d{3}\d{2}\d{2}$/)
+      .required(),
+    otp: Joi.string().required(),
   });
   return ticket.validate(data);
 };

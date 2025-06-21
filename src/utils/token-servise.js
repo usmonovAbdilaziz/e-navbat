@@ -12,7 +12,12 @@ export class Token {
     });
   }
 
-  async verfyToken(token, secretKey) {
-    return jwt.verify(token, secretKey);
+  async verifyToken(token, secretKey) {
+    try {
+      return jwt.verify(token, secretKey);
+    } catch (err) {
+      console.error("Token not valid:", err.message);
+      return null;
+    }
   }
 }
