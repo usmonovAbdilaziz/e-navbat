@@ -25,5 +25,13 @@
     "nodemailer": "^7.0.3",
     "nodemon": "^3.1.10",
     "otp-generator": "^4.0.1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usmonovAbdilaziz/e-navbat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/usmonovAbdilaziz/e-navbat/issues"
+  },
+  "homepage": "https://github.com/usmonovAbdilaziz/e-navbat#readme"
 }

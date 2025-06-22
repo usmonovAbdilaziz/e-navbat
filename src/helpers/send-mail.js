@@ -10,6 +10,7 @@ const transporter = createTransport({
     pass: config.MAIL_PASWORD,
   },
 });
+
 export function sendMailPromise(mailOptions) {
   return new Promise((resolve, reject) => {
     transporter.sendMail(mailOptions, (error, info) => {
