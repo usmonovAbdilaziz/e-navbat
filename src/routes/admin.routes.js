@@ -1,10 +1,21 @@
-import {Router} from 'express';
-import AdminController from '../controllers/admin.controller.js';
+import { Router } from "express";
+import AdminController from "../controllers/admin.controller.js";
+import { AuthGuard } from "../guards/auth.guard.js";
+import { SelfGuard } from "../guards/self.guard.js";
+import { RolesGuard } from "../guards/roles.guard.js";
 
 const router = Router();
-     
-const { createAdmin,getAdmins,getAdminById,updateAdmin ,deleteAdmin} = AdminController;
 
-router.post('/',createAdmin).get('/',getAdmins).get('/:id',getAdminById).patch('/:id',updateAdmin).delete('/:id',deleteAdmin);
+const controller = AdminController;
+
+router
+  .post("/", AuthGuard, RolesGuard(["superadmin"]), controller.createAdmin)
+  .post("/signin", controller.adminSignin)
+  .post("/token", controller.newAccesToken)
+  .post("/log-out", AuthGuard, controller.logOut)
+  .get("/", AuthGuard, RolesGuard(["superadmin"]), controller.getAdmins)
+  .get("/:id", AuthGuard, SelfGuard, controller.getAdminById)
+  .patch("/:id", AuthGuard, SelfGuard, controller.updateAdmin)
+  .delete("/:id", AuthGuard, SelfGuard, controller.deleteAdmin);
 
 export default router;

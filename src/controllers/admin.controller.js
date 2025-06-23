@@ -6,9 +6,11 @@ import {
   createValidator,
   updateValidator,
 } from "../validation/admin.validation.js";
+import { Token } from "../utils/token-servise.js";
 import { isValidObjectId } from "mongoose";
 
 const crypto = new Crypto();
+const token = new Token();
 
 class AdminController {
   async createAdmin(req, res) {
@@ -27,6 +29,84 @@ class AdminController {
         password: hashedPassword,
       });
       return successMessage(res, newAdmin, 201);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async adminSignin(req, res) {
+    try {
+      const { value, error } = createValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+      const username = value.username;
+      const admin = await Admin.findOne({ username });
+      if (!admin) {
+        return handleError(res, "Admin not found");
+      }
+      const payload = { id: admin._id, role: admin.role };
+      const accesToken = await token.generateAccesToken(payload);
+      const refreshToken = await token.generateRefreshToken(payload);
+      res.cookie("refreshTokenAdmin", refreshToken, {
+        httpOnly: true,
+        secure: true,
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
+      return successMessage(
+        res,
+        {
+          data: admin,
+          token: accesToken,
+        },
+        200
+      );
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async newAccesToken(req, res) {
+    try {
+      const refreshToken = req.cookies?.refreshTokenAdmin;
+      if (!refreshToken) {
+        return handleError(res, "Refresh token expired", 400);
+      }
+      const decodedToken = await token.verifyToken(
+        refreshToken,
+        config.TOKEN_REFRESH_KEY
+      );
+      if (!decodedToken) {
+        return handleError(res, "Invalid token", 400);
+      }
+      const admin = await Admin.findById(decodedToken.id);
+      if (!admin) {
+        return handleError(res, "Admin topilmadi", 404);
+      }
+      const payload = { id: admin._id, role: admin.role };
+      const accessToken = await token.generateAccesToken(payload);
+      return successMessage(res, { token: accessToken });
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async logOut(req, res) {
+    try {
+      const refreshToken = req.cookies?.refreshTokenAdmin;
+      if (!refreshToken) {
+        return handleError(res, "Refresh token epxired", 400);
+      }
+      const decodedToken = await token.verifyToken(
+        refreshToken,
+        config.TOKEN_REFRESH_KEY
+      );
+      if (!decodedToken) {
+        return handleError(res, "Invalid token", 400);
+      }
+      const customer = await Admin.findById(decodedToken.id);
+      if (!customer) {
+        return handleError(res, "Admin not found", 404);
+      }
+      res.clearCookie("refreshTokenAdmin");
+      return successMessage(res, {});
     } catch (error) {
       return handleError(res, error);
     }
