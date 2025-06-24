@@ -68,7 +68,6 @@ class CustomerController {
       return handleError(res, "Error sended on email", 400);
     }
   }
-
   async confirmSignin(req, res) {
     try {
       const { value, error } = confirmSignInCustomerValidator(req.body);
@@ -155,6 +154,7 @@ class CustomerController {
       return handleError(res, error);
     }
   }
+  async createCustomer(req, res) {}
 }
 
 export default new CustomerController();

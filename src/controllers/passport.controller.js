@@ -5,6 +5,7 @@ import {
 } from "../validation/passport.validator.js";
 import { handleError } from "../helpers/error.js";
 import { successMessage } from "../helpers/succes.js";
+import { isValidObjectId } from "mongoose";
 
 class PassportController {
   async createPassport(req, res) {
@@ -15,28 +16,20 @@ class PassportController {
       }
       const existsJshshr = await Passport.findOne({ jshshr: value.jshshr });
       if (existsJshshr) {
-        return handleError(res, "Passport already exsist from Jshshr", 409);
+        return handleError(res, "Passport already exsist", 409);
       }
       const exsistSerial = await Passport.findOne({
         serial_number: value.serial_number,
       });
       if (exsistSerial) {
-        return handleError(
-          res,
-          "Passport already exists from serial number ",
-          409
-        );
+        return handleError(res, "Passport already exists", 409);
       }
-
+      const customerId = value.customer_id;
       const existsCustomer = await Passport.findOne({
-        customer_id: value.customer_id,
+        customer_id: customerId,
       });
-      if (existsCustomer) {
-        return handleError(
-          res,
-          "Passport already exsist from customer ID",
-          409
-        );
+      if (!existsCustomer || isValidObjectId(customerId)) {
+        return handleError(res, "Invalid Id", 409);
       }
       const newPassport = await Passport.create(value);
       return successMessage(res, newPassport, 201);
@@ -89,7 +82,7 @@ class PassportController {
 
   static async findPassportById(res, id) {
     try {
-      const passport = Passport.findById(id);
+      const passport = Passport.findById(id).populate("customerId");
       if (!passport) {
         return handleError(res, "Passport not found", 404);
       }

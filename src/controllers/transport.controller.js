@@ -16,8 +16,7 @@ class TransportController {
         return handleError(res, error, 422);
       }
       const exists = await Transport.findOne({
-        transportType: value.transportType,
-        class: value.class,
+        transportNumber: value.transportNumber,
       });
       if (exists) {
         return handleError(res, "Transport already exists", 409);
@@ -30,7 +29,6 @@ class TransportController {
   }
   async getAllTransports(_, res) {
     try {
-      console.log(Date.now());
       const allTransport = await Transport.find().populate("tickets");
       return successMessage(res, allTransport);
     } catch (error) {

@@ -6,6 +6,7 @@ const controller = customerController;
 const router = Router();
 
 router
+  .post("/")
   .post("/signup", controller.signUp)
   .post("/signin", controller.signIn)
   .post("/confirm-signin", controller.confirmSignin)

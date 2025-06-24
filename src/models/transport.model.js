@@ -8,6 +8,7 @@ const transportSchema = new Schema(
       enum: ["electronical", "mechanical"],
       default: "electronical",
     },
+    transportNumber: { type: String, required: true },
     class: {
       type: String,
       enum: ["car", "bus", "truck", "bicycle", "motorcycle", "train", "plane"],

@@ -20,6 +20,8 @@ const token = new Token();
 class TicketController {
   async createTicket(req, res) {
     try {
+      const transportNum = await Transport.findOne("transportNumber");
+      console.log(transportNum);
       const ticketCount = await Ticket.countDocuments({
         transportId: req.body.transportId,
       });
@@ -157,7 +159,9 @@ class TicketController {
       if (!isValidObjectId(id)) {
         return handleError(res, "Invalid Id", 400);
       }
-      const ticket = await Ticket.findById(id).populate("transportId");
+      const ticket = await Ticket.findById(id)
+        .populate("transportId")
+        .populate("customerId");
       if (!ticket) {
         return handleError(res, "Ticket not found", 404);
       }
