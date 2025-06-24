@@ -1,40 +1,35 @@
-import config from "../config/app.js";
-
-import { connectDB } from "./admin.database.js";
 import Admin from "../models/admin.model.js";
+
 import { Crypto } from "../utils/hashed.js";
+import config from "../config/app.js";
+import { Token } from "../utils/token-servise.js";
 
 const crypto = new Crypto();
+const token = new Token();
 
-const nameAdmin = config.OWNER_USERNAME;
-const adminPassword = config.OWNER_PASSWORD;
-
-const ownerCreate = async () => {
+export const createSuperAdmin = async () => {
   try {
-    const existingAdmin = await Admin.findOne({ username: nameAdmin });
-    if (existingAdmin) {
-      console.log("Owner already exists");
-      return;
+    const existsSuperAdmin = await Admin.findOne({ role: "superadmin" });
+    if (!existsSuperAdmin) {
+      const hashedPassword = await crypto.encrypt(config.OWNER_PASSWORD);
+      const newAdmin = await Admin.create({
+        username: config.OWNER_USERNAME,
+        password: hashedPassword,
+        role: "superadmin",
+      });
+      const admin = await Admin.findOne({ username });
+      const payload = { id: admin._id, role: admin.role };
+      const refreshToken = await token.generateAccesToken(payload);
+      const accessToken = await token.generateRefreshToken(payload);
+      res.cookie("refreshTokenAdmin", refreshToken, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httOnly: true,
+        secure: true,
+      });
+      newAdmin.token = accessToken;
+      console.log("Super admin created successfully");
     }
-
-    const hashedPassword = await crypto.encrypt(adminPassword.toString());
-    await Admin.create({
-      username: nameAdmin,
-      password: hashedPassword,
-      role: "superadmin",
-    });
-
-    console.log("Created owner successfully");
   } catch (error) {
-    console.error(`Error creating owner: ${error}`);
-  } finally {
-    process.exit();
+    console.log(`Error on creating superadmin: ${error}`);
   }
 };
-
-const main = async () => {
-  await connectDB();
-  await ownerCreate();
-};
-
-main();

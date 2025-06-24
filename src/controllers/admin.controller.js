@@ -3,11 +3,12 @@ import { handleError } from "../helpers/error.js";
 import { successMessage } from "../helpers/succes.js";
 import { Crypto } from "../utils/hashed.js";
 import {
-  createValidator,
-  updateValidator,
+  createAdminValidator,
+  updateAdminValidator,
 } from "../validation/admin.validation.js";
 import { Token } from "../utils/token-servise.js";
 import { isValidObjectId } from "mongoose";
+import config from "../config/app.js";
 
 const crypto = new Crypto();
 const token = new Token();
@@ -15,7 +16,7 @@ const token = new Token();
 class AdminController {
   async createAdmin(req, res) {
     try {
-      const { value, error } = createValidator(req.body); //Admin malumotlarini validat qilmoqda
+      const { value, error } = createAdminValidator(req.body); //Admin malumotlarini validat qilmoqda
       if (error) {
         return handleError(res, error, 422);
       }
@@ -35,7 +36,7 @@ class AdminController {
   }
   async adminSignin(req, res) {
     try {
-      const { value, error } = createValidator(req.body);
+      const { value, error } = createAdminValidator(req.body);
       if (error) {
         return handleError(res, error, 422);
       }
@@ -101,8 +102,8 @@ class AdminController {
       if (!decodedToken) {
         return handleError(res, "Invalid token", 400);
       }
-      const customer = await Admin.findById(decodedToken.id);
-      if (!customer) {
+      const admin = await Admin.findById(decodedToken.id);
+      if (!admin) {
         return handleError(res, "Admin not found", 404);
       }
       res.clearCookie("refreshTokenAdmin");
@@ -132,7 +133,7 @@ class AdminController {
     try {
       const id = req.params.id;
       const admin = await AdminController.findAdminById(res, id);
-      const { value, error } = updateValidator(req.body);
+      const { value, error } = updateAdminValidator(req.body);
       if (error) {
         return handleError(res, error, 422);
       }

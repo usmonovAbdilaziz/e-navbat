@@ -1,11 +1,11 @@
-import config from "../config/app.js";
 import { handleError } from "../helpers/error.js";
 import { Token } from "../utils/token-servise.js";
+import config from "../config/app.js";
 
 const tokenService = new Token();
 
 export const AuthGuard = async (req, res, next) => {
-  const auth = req.headers.authorization;
+  const auth = await req.headers.authorization;
   if (!auth) {
     return handleError(res, "Authorization error", 401);
   }
@@ -16,6 +16,7 @@ export const AuthGuard = async (req, res, next) => {
   }
   try {
     const user = await tokenService.verifyToken(token, config.TOKEN_ACCES_KEY);
+    console.log(user);
     req.user = user;
     next();
   } catch (error) {

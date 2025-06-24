@@ -7,12 +7,14 @@ import customerRouter from "./routes/customer.routes.js";
 import express from "express";
 import config from "./config/app.js";
 import cookieParser from "cookie-parser";
+import { createSuperAdmin } from "./db/create.owner.js";
 
 const PORT = config.PORT;
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
 await connectDB();
+await createSuperAdmin();
 
 app.use("/admin", adminRouter);
 app.use("/passport", passportRouter);
