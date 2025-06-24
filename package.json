@@ -5,8 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/main.js",
-    "owner": "node src/db/create.owner.js"
+    "dev": "nodemon src/main.js"
   },
   "keywords": [],
   "author": "",
