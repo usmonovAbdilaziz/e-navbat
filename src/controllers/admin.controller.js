@@ -43,7 +43,11 @@ class AdminController {
       const username = value.username;
       const admin = await Admin.findOne({ username });
       if (!admin) {
-        return handleError(res, "Admin not found");
+        return handleError(res, "Admin not found", 404);
+      }
+      const pass = await crypto.compare(value.password, admin.password);
+      if (!pass) {
+        return handleError(res, "Admin not found", 404);
       }
       const payload = { id: admin._id, role: admin.role };
       const accesToken = await token.generateAccesToken(payload);
