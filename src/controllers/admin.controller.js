@@ -154,7 +154,8 @@ class AdminController {
   }
   async deleteAdmin(req, res) {
     try {
-      await AdminController.findAdminById(res, req.params.id);
+      const id = req.params.id;
+      await AdminController.findAdminById(res, id);
       await Admin.findByIdAndDelete(id);
       return successMessage(res, `Deleted admin name`, 200);
     } catch (error) {

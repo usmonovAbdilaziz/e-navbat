@@ -6,6 +6,7 @@ import {
 import { handleError } from "../helpers/error.js";
 import { successMessage } from "../helpers/succes.js";
 import { isValidObjectId } from "mongoose";
+import Customer from "../models/customer.model.js";
 
 class PassportController {
   async createPassport(req, res) {
@@ -13,6 +14,10 @@ class PassportController {
       const { value, error } = createValidatorForPs(req.body);
       if (error) {
         return handleError(res, error, 422);
+      }
+      const isCustomer = await Customer.findById(value.customerId);
+      if (!isCustomer) {
+        return handleError(res, "Customer not found", 404);
       }
       const existsJshshr = await Passport.findOne({ jshshr: value.jshshr });
       if (existsJshshr) {
@@ -25,10 +30,7 @@ class PassportController {
         return handleError(res, "Passport already exists", 409);
       }
       const customerId = value.customer_id;
-      const existsCustomer = await Passport.findOne({
-        customer_id: customerId,
-      });
-      if (!existsCustomer || isValidObjectId(customerId)) {
+      if (!isCustomer || isValidObjectId(customerId)) {
         return handleError(res, "Invalid Id", 409);
       }
       const newPassport = await Passport.create(value);
@@ -39,7 +41,7 @@ class PassportController {
   }
   async getAllPassports(_, res) {
     try {
-      const passports = await Passport.find();
+      const passports = await Passport.find().populate("customerId");
       return successMessage(res, passports);
     } catch (error) {
       return handleError(res, error);

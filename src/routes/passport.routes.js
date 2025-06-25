@@ -1,5 +1,6 @@
 import { Router } from "express";
 import PassportController from "../controllers/passport.controller.js";
+import { AuthGuard } from "../guards/auth.guard.js";
 
 const router = Router();
 const {

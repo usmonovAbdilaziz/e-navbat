@@ -8,7 +8,7 @@ const ticketSchema = new Schema(
     price: { type: String, required: true },
     departure: { type: Date, required: true },
     arrival: { type: Date, required: true },
-    customerId: { type: String, required: true },
+    customerId: { type: Types.ObjectId, ref: "Customer", required: true },
   },
   { timestamps: true }
 );

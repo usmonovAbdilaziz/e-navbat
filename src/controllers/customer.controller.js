@@ -1,8 +1,10 @@
 import Customer from "../models/customer.model.js";
 import {
+  createCustomerValidator,
   confirmSignInCustomerValidator,
   signInCustomerValidator,
   signUpCustomerValidator,
+  updateCustomerValidator,
 } from "../validation/customer-validator.js";
 import { handleError } from "../helpers/error.js";
 import { successMessage } from "../helpers/succes.js";
@@ -11,6 +13,7 @@ import { generetOTP } from "../helpers/genereate-otp.js";
 import NodeCache from "node-cache";
 import config from "../config/app.js";
 import { sendMailPromise } from "../helpers/send-mail.js";
+import { isValidObjectId } from "mongoose";
 
 const token = new Token();
 const cache = new NodeCache();
@@ -154,7 +157,88 @@ class CustomerController {
       return handleError(res, error);
     }
   }
-  async createCustomer(req, res) {}
+  async createCustomer(req, res) {
+    try {
+      const { value, error } = createCustomerValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+      const email = value.email;
+      const existsEmail = await Customer.findOne({ email });
+      if (existsEmail) {
+        handleError(res, "Customer already exists", 409);
+      }
+      const newCustomer = await Customer.create(value);
+      return successMessage(res, newCustomer, 201);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async getAllCustomer(_, res) {
+    try {
+      const allCustomer = await Customer.find()
+        .populate("pasports")
+        .populate({
+          path: "tickets",
+          populate: { path: "transportId" }, // ticket ichidagi transportni ham olib kelish
+        });
+      return successMessage(res, allCustomer);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async getCustomerById(req, res) {
+    try {
+      const customer = await CustomerController.findCustomerById(
+        res,
+        req.params.id
+      );
+      return successMessage(res, customer);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async updateCustomer(req, res) {
+    try {
+      const id = req.params.id;
+      await CustomerController.findCustomerById(res, id);
+      const { value, error } = updateCustomerValidator(req.body);
+      if (error) {
+        return handleError(res, error, 422);
+      }
+      const newCustomer = await Customer.findByIdAndUpdate(id, value, {
+        new: true,
+      });
+      return successMessage(res, newCustomer);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  async deleteCustomer(req, res) {
+    try {
+      const id = req.params.id;
+      await CustomerController.findCustomerById(res, id);
+      await Customer.findByIdAndDelete(id);
+      return successMessage(res, "Deleted Customer");
+    } catch (error) {
+      return handleError(res, error);
+    }
+  }
+  static async findCustomerById(res, id) {
+    if (!isValidObjectId(id)) {
+      return handleError(res, "Invalid ID format", 400);
+    }
+    const customer = await Customer.findById(id)
+      .populate("pasports")
+      .populate({
+        path: "tickets",
+        populate: { path: "transportId" }, // ticket ichidagi transportni ham olib kelish
+      });
+    if (!customer) {
+      return handleError(res, "Customer not found", 404);
+    }
+    return customer;
+  }
 }
 
 export default new CustomerController();
